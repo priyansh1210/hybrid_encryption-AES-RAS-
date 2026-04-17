@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HybridCrypt - RSA + AES Encryption</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0e17;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            color: #7a8ba0;
+            font-size: 0.95rem;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            background: #111827;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 30px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: #7a8ba0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            color: #c0c8d4;
+            background: #1a2232;
+        }
+
+        .nav-tab.active {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e0e6ed;
+            margin-bottom: 16px;
+        }
+
+        /* Form Elements */
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0d1321;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            color: #e0e6ed;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        textarea.output {
+            min-height: 100px;
+            background: #080c14;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+            flex: 1;
+        }
+
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { background: #1e3a5f; color: #5a7a9a; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        .btn-secondary:hover { background: #273548; color: #e0e6ed; }
+
+        .btn-danger {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .btn-danger:hover { background: #991b1b; }
+
+        .btn-success {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .btn-success:hover { background: #166534; }
+
+        /* Steps Log */
+        .steps-log {
+            background: #080c14;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .steps-log.visible { display: block; }
+
+        .steps-log h4 {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .step-item {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #22c55e;
+            padding: 3px 0;
+            border-bottom: 1px solid #111827;
+        }
+
+        .step-item:last-child { border-bottom: none; }
+        .step-item.error { color: #ef4444; }
+        .step-item.info { color: #3b82f6; }
+
+        /* Toggle */
+        .mode-toggle {
+            display: flex;
+            gap: 2px;
+            background: #0d1321;
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #1e293b;
+            color: #e0e6ed;
+        }
+
+        /* File upload */
+        .file-upload {
+            border: 2px dashed #1e293b;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .file-upload:hover { border-color: #2563eb; }
+
+        .file-upload p {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .file-upload .selected {
+            color: #22c55e;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .file-upload input { display: none; }
+
+        /* Attack cards */
+        .attack-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .attack-card {
+            background: #0d1321;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .attack-card:hover {
+            border-color: #2563eb;
+            background: #111827;
+        }
+
+        .attack-card h4 {
+            font-size: 0.9rem;
+            color: #e0e6ed;
+            margin-bottom: 4px;
+        }
+
+        .attack-card p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Honeypot specific */
+        .honeypot-section {
+            border-left: 3px solid #2563eb;
+            padding-left: 16px;
+            margin-bottom: 16px;
+        }
+
+        .honeypot-section.decoy {
+            border-left-color: #f59e0b;
+        }
+
+        .honeypot-section label:first-child {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e0e6ed;
+            margin-bottom: 12px;
+        }
+
+        /* Result badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-real { background: #14532d; color: #86efac; }
+        .badge-decoy { background: #78350f; color: #fcd34d; }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #1e293b;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .nav-tabs { flex-wrap: wrap; }
+            .nav-tab { min-width: 45%; }
+            .attack-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>HybridCrypt</h1>
+            <p>Hybrid Encryption System -- RSA + AES-256-GCM</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('encrypt')">Encrypt</button>
+            <button class="nav-tab" onclick="switchTab('decrypt')">Decrypt</button>
+            <button class="nav-tab" onclick="switchTab('files')">Files</button>
+            <button class="nav-tab" onclick="switchTab('attacks')">Attack Sim</button>
+            <button class="nav-tab" onclick="switchTab('honeypot')">Honeypot</button>
+            <button class="nav-tab" onclick="switchTab('keys')">Keys</button>
+        </div>
+
+        <!-- ===== ENCRYPT PANEL ===== -->
+        <div class="panel active" id="panel-encrypt">
+            <div class="card">
+                <div class="card-title">Encrypt a Message</div>
+                <label>Plaintext Message</label>
+                <textarea id="enc-input" placeholder="Enter the text you want to encrypt..."></textarea>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="encryptMessage()">Encrypt</button>
+                    <button class="btn btn-secondary" onclick="clearField('enc-input'); clearField('enc-output'); hideSteps('enc-steps')">Clear</button>
+                </div>
+                <div class="steps-log" id="enc-steps"></div>
+                <label style="margin-top:20px;">Ciphertext Output</label>
+                <textarea class="output" id="enc-output" readonly placeholder="Encrypted output will appear here..."></textarea>
+            </div>
+        </div>
+
+        <!-- ===== DECRYPT PANEL ===== -->
+        <div class="panel" id="panel-decrypt">
+            <div class="card">
+                <div class="card-title">Decrypt a Message</div>
+                <label>Ciphertext (Base64)</label>
+                <textarea id="dec-input" placeholder="Paste the encrypted ciphertext here..."></textarea>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="decryptMessage()">Decrypt</button>
+                    <button class="btn btn-secondary" onclick="clearField('dec-input'); clearField('dec-output'); hideSteps('dec-steps')">Clear</button>
+                </div>
+                <div class="steps-log" id="dec-steps"></div>
+                <label style="margin-top:20px;">Decrypted Output</label>
+                <textarea class="output" id="dec-output" readonly placeholder="Decrypted message will appear here..."></textarea>
+            </div>
+        </div>
+
+        <!-- ===== FILES PANEL ===== -->
+        <div class="panel" id="panel-files">
+            <div class="card">
+                <div class="card-title">File Encryption / Decryption</div>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" onclick="switchFileMode('encrypt-file', this)">Encrypt File</button>
+                    <button class="mode-btn" onclick="switchFileMode('decrypt-file', this)">Decrypt File</button>
+                </div>
+
+                <div id="encrypt-file-panel">
+                    <div class="file-upload" onclick="document.getElementById('file-enc-input').click()">
+                        <p>Click to select a file to encrypt</p>
+                        <p class="selected" id="file-enc-name"></p>
+                        <input type="file" id="file-enc-input" onchange="showFileName('file-enc-input', 'file-enc-name')">
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="encryptFile()">Encrypt File</button>
+                    </div>
+                    <div class="steps-log" id="file-enc-steps"></div>
+                </div>
+
+                <div id="decrypt-file-panel" style="display:none;">
+                    <div class="file-upload" onclick="document.getElementById('file-dec-input').click()">
+                        <p>Click to select a .enc file to decrypt</p>
+                        <p class="selected" id="file-dec-name"></p>
+                        <input type="file" id="file-dec-input" onchange="showFileName('file-dec-input', 'file-dec-name')">
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="decryptFile()">Decrypt File</button>
+                    </div>
+                    <div class="steps-log" id="file-dec-steps"></div>
+                    <label style="margin-top:20px;">Preview</label>
+                    <textarea class="output" id="file-dec-output" readonly placeholder="File preview will appear here..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ATTACKS PANEL ===== -->
+        <div class="panel" id="panel-attacks">
+            <div class="card">
+                <div class="card-title">Attack Simulations</div>
+                <p style="color:#64748b; font-size:0.85rem; margin-bottom:16px;">
+                    These simulations demonstrate why hybrid encryption is secure. Encrypt a message first, then run an attack.
+                </p>
+                <div class="attack-grid">
+                    <div class="attack-card" onclick="runAttack('brute-force')">
+                        <h4>Brute Force AES-256</h4>
+                        <p>Try 10,000 random keys against the ciphertext</p>
+                    </div>
+                    <div class="attack-card" onclick="runAttack('tamper')">
+                        <h4>Ciphertext Tampering</h4>
+                        <p>Flip bits and test GCM integrity detection</p>
+                    </div>
+                    <div class="attack-card" onclick="runAttack('wrong-key')">
+                        <h4>Wrong RSA Key</h4>
+                        <p>Attempt decryption with attacker's key pair</p>
+                    </div>
+                </div>
+                <div class="steps-log" id="attack-steps"></div>
+            </div>
+        </div>
+
+        <!-- ===== HONEYPOT PANEL ===== -->
+        <div class="panel" id="panel-honeypot">
+            <div class="card">
+                <div class="card-title">Honeypot Encryption (Plausible Deniability)</div>
+                <p style="color:#64748b; font-size:0.85rem; margin-bottom:20px;">
+                    Two messages, two passwords. Give the attacker the decoy password -- they will never know the real message exists.
+                </p>
+
+                <div class="mode-toggle">
+                    <button class="mode-btn active" onclick="switchHoneypotMode('hp-create', this)">Create Honeypot</button>
+                    <button class="mode-btn" onclick="switchHoneypotMode('hp-decrypt', this)">Decrypt Honeypot</button>
+                </div>
+
+                <div id="hp-create-panel">
+                    <div class="honeypot-section">
+                        <label>Real Secret</label>
+                        <label>Real Message</label>
+                        <input type="text" id="hp-real-msg" placeholder="Your actual secret message">
+                        <label>Real Password</label>
+                        <input type="password" id="hp-real-pwd" placeholder="Password only you know">
+                    </div>
+                    <div class="honeypot-section decoy">
+                        <label>Decoy (What Attacker Sees)</label>
+                        <label>Decoy Message</label>
+                        <input type="text" id="hp-decoy-msg" placeholder="Fake message for attacker">
+                        <label>Decoy Password</label>
+                        <input type="password" id="hp-decoy-pwd" placeholder="Password you give to attacker">
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="honeypotEncrypt()">Create Honeypot</button>
+                        <button class="btn btn-secondary" onclick="clearHoneypotCreate()">Clear</button>
+                    </div>
+                    <div class="steps-log" id="hp-enc-steps"></div>
+                </div>
+
+                <div id="hp-decrypt-panel" style="display:none;">
+                    <label>Honeypot Ciphertext</label>
+                    <textarea id="hp-dec-ct" placeholder="Paste honeypot ciphertext here..."></textarea>
+                    <label>Password</label>
+                    <input type="password" id="hp-dec-pwd" placeholder="Enter password to try">
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="honeypotDecrypt()">Decrypt</button>
+                        <button class="btn btn-secondary" onclick="clearHoneypotDecrypt()">Clear</button>
+                    </div>
+                    <div class="steps-log" id="hp-dec-steps"></div>
+                    <div id="hp-dec-result" style="margin-top:16px; display:none;">
+                        <label>Decrypted Message <span class="badge" id="hp-dec-badge"></span></label>
+                        <textarea class="output" id="hp-dec-output" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== KEYS PANEL ===== -->
+        <div class="panel" id="panel-keys">
+            <div class="card">
+                <div class="card-title">RSA Key Management</div>
+                <p style="color:#64748b; font-size:0.85rem; margin-bottom:16px;">
+                    Generate a new 2048-bit RSA key pair. Keys are used for all encryption/decryption operations.
+                </p>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="generateKeys()">Generate New Key Pair</button>
+                </div>
+                <div class="steps-log" id="key-steps"></div>
+                <label style="margin-top:20px;">Public Key Preview</label>
+                <textarea class="output" id="key-preview" readonly placeholder="Generate keys to see preview..." style="min-height:80px;"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCiphertext = "";
+        let honeypotCiphertext = "";
+
+        // ── Tab Switching ──
+        function switchTab(name) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function switchFileMode(mode, btn) {
+            document.getElementById('encrypt-file-panel').style.display = mode === 'encrypt-file' ? 'block' : 'none';
+            document.getElementById('decrypt-file-panel').style.display = mode === 'decrypt-file' ? 'block' : 'none';
+            btn.parentElement.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function switchHoneypotMode(mode, btn) {
+            document.getElementById('hp-create-panel').style.display = mode === 'hp-create' ? 'block' : 'none';
+            document.getElementById('hp-decrypt-panel').style.display = mode === 'hp-decrypt' ? 'block' : 'none';
+            btn.parentElement.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // ── Helpers ──
+        function clearField(id) { document.getElementById(id).value = ""; }
+        function hideSteps(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('visible');
+            el.innerHTML = '';
+        }
+
+        function showSteps(containerId, steps, isError) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '<h4>Process Steps</h4>';
+            steps.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'step-item' + (isError ? ' error' : '');
+                div.textContent = s;
+                container.appendChild(div);
+            });
+            container.classList.add('visible');
+        }
+
+        function showFileName(inputId, nameId) {
+            const input = document.getElementById(inputId);
+            const nameEl = document.getElementById(nameId);
+            if (input.files.length > 0) {
+                nameEl.textContent = "Selected: " + input.files[0].name;
+            }
+        }
+
+        function setLoading(btn, loading) {
+            if (loading) {
+                btn.disabled = true;
+                btn.dataset.originalText = btn.textContent;
+                btn.innerHTML = '<span class="spinner"></span>Processing...';
+            } else {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || btn.textContent;
+            }
+        }
+
+        // ── API Calls ──
+        async function encryptMessage() {
+            const btn = event.target;
+            const message = document.getElementById('enc-input').value;
+            if (!message) return;
+
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/api/encrypt-message', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('enc-output').value = data.ciphertext;
+                    currentCiphertext = data.ciphertext;
+                    showSteps('enc-steps', data.steps);
+                } else {
+                    showSteps('enc-steps', [data.error], true);
+                }
+            } catch(e) {
+                showSteps('enc-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        async function decryptMessage() {
+            const btn = event.target;
+            const ciphertext = document.getElementById('dec-input').value;
+            if (!ciphertext) return;
+
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/api/decrypt-message', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ciphertext})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('dec-output').value = data.plaintext;
+                    showSteps('dec-steps', data.steps);
+                } else {
+                    showSteps('dec-steps', [data.error], true);
+                }
+            } catch(e) {
+                showSteps('dec-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        async function encryptFile() {
+            const btn = event.target;
+            const fileInput = document.getElementById('file-enc-input');
+            if (!fileInput.files.length) return;
+
+            setLoading(btn, true);
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await fetch('/api/encrypt-file', {method: 'POST', body: formData});
+                const data = await res.json();
+                if (data.success) {
+                    currentCiphertext = data.ciphertext;
+                    showSteps('file-enc-steps', data.steps);
+                } else {
+                    showSteps('file-enc-steps', [data.error], true);
+                }
+            } catch(e) {
+                showSteps('file-enc-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        async function decryptFile() {
+            const btn = event.target;
+            const fileInput = document.getElementById('file-dec-input');
+            if (!fileInput.files.length) return;
+
+            setLoading(btn, true);
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await fetch('/api/decrypt-file', {method: 'POST', body: formData});
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('file-dec-output').value = data.preview;
+                    showSteps('file-dec-steps', data.steps);
+                } else {
+                    showSteps('file-dec-steps', [data.error], true);
+                }
+            } catch(e) {
+                showSteps('file-dec-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        async function runAttack(type) {
+            if (!currentCiphertext) {
+                showSteps('attack-steps', ['No ciphertext available. Encrypt a message first in the Encrypt tab.'], true);
+                return;
+            }
+
+            showSteps('attack-steps', ['Running attack simulation...']);
+
+            try {
+                const res = await fetch('/api/attack/' + type, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ciphertext: currentCiphertext})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showSteps('attack-steps', data.steps);
+                } else {
+                    showSteps('attack-steps', [data.error], true);
+                }
+            } catch(e) {
+                showSteps('attack-steps', ['Request failed: ' + e.message], true);
+            }
+        }
+
+        async function generateKeys() {
+            const btn = event.target;
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/api/generate-keys', {method: 'POST'});
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('key-preview').value = data.public_key_preview;
+                    showSteps('key-steps', data.steps);
+                }
+            } catch(e) {
+                showSteps('key-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        async function honeypotEncrypt() {
+            const btn = event.target;
+            const payload = {
+                real_message: document.getElementById('hp-real-msg').value,
+                decoy_message: document.getElementById('hp-decoy-msg').value,
+                real_password: document.getElementById('hp-real-pwd').value,
+                decoy_password: document.getElementById('hp-decoy-pwd').value,
+            };
+
+            if (!payload.real_message || !payload.decoy_message || !payload.real_password || !payload.decoy_password) {
+                showSteps('hp-enc-steps', ['All fields are required'], true);
+                return;
+            }
+
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/api/honeypot/encrypt', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    honeypotCiphertext = data.ciphertext;
+                    document.getElementById('hp-dec-ct').value = data.ciphertext;
+                    showSteps('hp-enc-steps', data.steps);
+                } else {
+                    showSteps('hp-enc-steps', [data.error], true);
+                }
+            } catch(e) {
+                showSteps('hp-enc-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        async function honeypotDecrypt() {
+            const btn = event.target;
+            const ciphertext = document.getElementById('hp-dec-ct').value;
+            const password = document.getElementById('hp-dec-pwd').value;
+
+            if (!ciphertext || !password) {
+                showSteps('hp-dec-steps', ['Ciphertext and password are required'], true);
+                return;
+            }
+
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/api/honeypot/decrypt', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ciphertext, password})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showSteps('hp-dec-steps', data.steps);
+                    document.getElementById('hp-dec-result').style.display = 'block';
+                    document.getElementById('hp-dec-output').value = data.plaintext;
+                    const badge = document.getElementById('hp-dec-badge');
+                    badge.textContent = data.message_type;
+                    badge.className = 'badge ' + (data.message_type === 'REAL' ? 'badge-real' : 'badge-decoy');
+                } else {
+                    showSteps('hp-dec-steps', [data.error], true);
+                    document.getElementById('hp-dec-result').style.display = 'none';
+                }
+            } catch(e) {
+                showSteps('hp-dec-steps', ['Request failed: ' + e.message], true);
+            }
+            setLoading(btn, false);
+        }
+
+        function clearHoneypotCreate() {
+            ['hp-real-msg','hp-real-pwd','hp-decoy-msg','hp-decoy-pwd'].forEach(clearField);
+            hideSteps('hp-enc-steps');
+        }
+
+        function clearHoneypotDecrypt() {
+            ['hp-dec-ct','hp-dec-pwd'].forEach(clearField);
+            hideSteps('hp-dec-steps');
+            document.getElementById('hp-dec-result').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
